@@ -1,11 +1,11 @@
 {
-	"id": "blog-publisher",
-	"name": "Blog publisher",
+	"id": "file-publisher",
+	"name": "File Publisher",
 	"version": "0.0.1",
 	"minAppVersion": "0.15.0",
-	"description": "Publishes a file to a given api",
+	"description": "Publishes a file to a given api.",
 	"author": "Devin Sackett",
-	"authorUrl": "https://dirtsailor.co",
+	"authorUrl": "https://github.com/yiglas/obsidian-file-publisher",
 	"fundingUrl": "",
 	"isDesktopOnly": false
 }

@@ -1,7 +1,7 @@
 {
-	"name": "blog-publisher",
+	"name": "file-publisher",
 	"version": "0.0.1",
-	"description": "Publishes a file to a given api",
+	"description": "Publishes a file to a given api.",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
