@@ -34,14 +34,15 @@ export default class MyPlugin extends Plugin {
 
 		const adapter = this.app.vault.adapter as FileSystemAdapter;
 		const basePath = adapter.getBasePath();
-		const { url, apiKey, apiSecret } = this.settings;
-		const token = Buffer.from(`${apiKey}:${apiSecret}`).toString("base64");
 
 		this.registerEvent(
 			this.app.workspace.on("file-menu", (menu, file) => {
 				if (!("extension" in file)) {
 					return;
 				}
+
+				const { url, apiKey, apiSecret } = this.settings;
+				const token = Buffer.from(`${apiKey}:${apiSecret}`).toString("base64");
 
 				menu.addItem((item) => {
 					item
