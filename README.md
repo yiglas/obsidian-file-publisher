@@ -1,4 +1,4 @@
-# Obsidian Blog Publisher
+# Obsidian File Publisher
 
 Obsidian plugin that allows you to publish a file to a POST endpoint.
 
@@ -10,9 +10,9 @@ Enter the API key for the endpoint
 
 Enter the API secret for the endpoint
 
-# Create a new blog
+# Create a new file to post
 
-1. Create a template with the following header
+1. Create a template with the following frontmatter
 
    ```
    ---
@@ -26,6 +26,6 @@ Enter the API secret for the endpoint
 
 3. Insert the by executing the `Templates: Insert template` command
 
-4. Write your blog
+4. Write your note
 
 5. Right click on the Note and select `Publish file`
