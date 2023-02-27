@@ -1,5 +1,5 @@
 {
-	"name": "obsidian-blog-publisher",
+	"name": "blog-publisher",
 	"version": "0.0.1",
 	"description": "Publishes a file to a given api",
 	"main": "main.js",
