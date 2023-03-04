@@ -5,6 +5,6 @@
 	"minAppVersion": "0.15.0",
 	"description": "Publishes a file to a given api.",
 	"author": "Devin Sackett",
-	"authorUrl": "https://github.com/yiglas/obsidian-file-publisher",
+	"authorUrl": "https://github.com/yiglas",
 	"isDesktopOnly": false
 }
