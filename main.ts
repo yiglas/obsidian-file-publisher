@@ -1,9 +1,10 @@
 import axios from "axios";
 import * as E from "fp-ts/lib/Either";
-import { identity, pipe } from "fp-ts/lib/function";
+import { Lazy, pipe } from "fp-ts/lib/function";
 import * as O from "fp-ts/lib/Option";
+import * as RA from "fp-ts/lib/ReadonlyArray";
+import * as Str from "fp-ts/lib/string";
 import * as TE from "fp-ts/lib/TaskEither";
-import * as fs from "fs";
 import {
 	App,
 	FileSystemAdapter,
@@ -11,8 +12,10 @@ import {
 	Plugin,
 	PluginSettingTab,
 	Setting,
+	TAbstractFile,
+	TFile,
+	Vault,
 } from "obsidian";
-import * as path from "path";
 
 interface Settings {
 	url: string;
@@ -25,6 +28,8 @@ const DEFAULT_SETTINGS: Settings = {
 	apiKey: "",
 	apiSecret: "",
 };
+
+const PUBLISHED_DIR = "published";
 
 export default class MyPlugin extends Plugin {
 	settings: Settings;
@@ -50,11 +55,11 @@ export default class MyPlugin extends Plugin {
 						.setIcon("document")
 						.onClick(() =>
 							pipe(
-								path.join(basePath, file.path),
+								file,
 								log("Publishing file..."),
 								TE.fromNullable(new Error("File not found")),
-								TE.chain(publishFile(url, token)),
-								TE.chain(moveFile),
+								TE.chain(publishFile(this.app.vault, url, token)),
+								TE.chain(moveFile(this.app.vault)),
 								TE.match(
 									(e) => notify(e, "File failed to publish"),
 									() => notify(undefined, "File has been published")
@@ -79,44 +84,25 @@ export default class MyPlugin extends Plugin {
 	}
 }
 
-const buildFormData = (data: Record<string, any>) => {
-	const form = new FormData();
+const TEthunk = <A>(f: Lazy<Promise<A>>) => TE.tryCatch(f, E.toError);
 
-	Object.entries(data).forEach(([key, value]) => form.append(key, value));
-
-	return form;
-};
-
-const publishFile = (url: string, token: string) => (filePath: string) =>
-	pipe(
-		{ fileName: path.parse(filePath).name, file: fs.readFileSync(filePath) },
-		buildFormData,
-		TE.tryCatchK(
-			(data) =>
-				axios.post(url, data, {
-					headers: {
-						"Content-Type": "multipart/form-data",
-						Authorization: "Basic " + token,
-					},
-				}),
-			E.toError
-		),
-		TE.chain(() => TE.right(filePath))
-	);
-
-const createDir = (dir: string) =>
-	pipe(
-		dir,
-		E.fromPredicate(
-			(dir) => !fs.existsSync(dir),
-			() => new Error("directory exists")
-		),
-		E.chain((dir) => E.tryCatch(() => fs.mkdirSync(dir), E.toError)),
-		E.match(
-			() => dir,
-			() => dir
-		)
-	);
+const publishFile =
+	(vault: Vault, url: string, token: string) => (file: TFile) =>
+		pipe(
+			TE.right({ fileName: file.name }),
+			TE.bind("file", () => TEthunk(() => vault.read(file))),
+			TE.chain((data) =>
+				TEthunk(() =>
+					axios.post(url, data, {
+						headers: {
+							"Content-Type": "multipart/form-data",
+							Authorization: "Basic " + token,
+						},
+					})
+				)
+			),
+			TE.chain(() => TE.right(file))
+		);
 
 const log =
 	(msg: string) =>
@@ -125,24 +111,35 @@ const log =
 		return a;
 	};
 
-const moveFile = (filePath: string) =>
-	pipe(
-		path.parse(filePath),
-		O.fromPredicate(({ dir }) => !dir.contains("published")),
-		O.let("file", () => filePath),
-		O.let("newPath", ({ dir }) => createDir(path.join(dir, "published"))),
-		O.map(({ file, base, newPath }) =>
-			pipe(
-				E.tryCatch(
-					() => fs.renameSync(file, path.join(newPath, base)),
-					E.toError
+const moveFile = (vault: Vault) => (file: TAbstractFile) =>
+	file.path.contains(PUBLISHED_DIR)
+		? TE.right(file)
+		: pipe(
+				file.path,
+				Str.split("/"),
+				(parts) => O.some(parts),
+				O.chain((parts) =>
+					pipe(parts, RA.insertAt(parts.length - 1, PUBLISHED_DIR))
 				),
-				E.map(() => newPath)
-			)
-		),
-		O.match(() => E.right<Error, string>(""), identity),
-		TE.fromEither
-	);
+				TE.fromOption(() => new Error("unable to build file path")),
+				TE.bindTo("parts"),
+				TE.let("base", ({ parts }) => parts.slice(0, -1).join("/")),
+				TE.let("path", ({ parts }) => parts.join("/")),
+				TE.bind("created", ({ base }) =>
+					pipe(
+						pipe(
+							TEthunk(() => vault.createFolder(base)),
+							TE.match(
+								() => base,
+								() => base
+							)
+						),
+						TE.fromTask
+					)
+				),
+				TE.chain(({ path }) => TEthunk(() => vault.rename(file, path))),
+				TE.chain(() => TE.right(file))
+		  );
 
 const notify = (e: Error | undefined, msg: string) => {
 	console.log(msg);
