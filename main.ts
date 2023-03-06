@@ -31,7 +31,7 @@ const DEFAULT_SETTINGS: Settings = {
 
 const PUBLISHED_DIR = "published";
 
-export default class MyPlugin extends Plugin {
+export default class FilePublisher extends Plugin {
 	settings: Settings;
 
 	async onload() {
@@ -70,7 +70,7 @@ export default class MyPlugin extends Plugin {
 			})
 		);
 
-		this.addSettingTab(new BlogPublisherTab(this.app, this));
+		this.addSettingTab(new FilePublisherTab(this.app, this));
 	}
 
 	onunload() {}
@@ -151,10 +151,10 @@ const notify = (e: Error | undefined, msg: string) => {
 	new Notice(msg);
 };
 
-class BlogPublisherTab extends PluginSettingTab {
-	plugin: MyPlugin;
+class FilePublisherTab extends PluginSettingTab {
+	plugin: FilePublisher;
 
-	constructor(app: App, plugin: MyPlugin) {
+	constructor(app: App, plugin: FilePublisher) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
@@ -164,7 +164,7 @@ class BlogPublisherTab extends PluginSettingTab {
 
 		containerEl.empty();
 
-		containerEl.createEl("h3", { text: "Blog Publisher Settings" });
+		containerEl.createEl("h3", { text: "File Publisher Settings" });
 
 		new Setting(containerEl)
 			.setName("Publisher url")
@@ -184,7 +184,7 @@ class BlogPublisherTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("API Key")
 			.setDesc(
-				"API Key used when posting a blog to the URL. NOTE: this is passed as the user of the basic authorization header."
+				"API Key used when posting a file to the URL. NOTE: this is passed as the user of the basic authorization header."
 			)
 			.addText((text) =>
 				text
@@ -199,7 +199,7 @@ class BlogPublisherTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("API Secret")
 			.setDesc(
-				"API Secret used when posting a blog to the URL. NOTE: this is passed as the password of the basic authorization header."
+				"API Secret used when posting a file to the URL. NOTE: this is passed as the password of the basic authorization header."
 			)
 			.addText((text) =>
 				text
